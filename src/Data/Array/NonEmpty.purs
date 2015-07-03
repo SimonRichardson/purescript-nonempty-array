@@ -32,7 +32,7 @@ import Data.Foldable (Foldable, foldr, foldl, foldMap)
 import qualified Data.Traversable (Traversable, traverse, sequence) as T
 import Data.Maybe (Maybe(..))
 
-data NonEmpty a = NonEmpty a [a]
+data NonEmpty a = NonEmpty a (A a)
 
 instance showNonEmpty :: (Show a) => Show (NonEmpty a) where
     show (NonEmpty a as) = "[" ++ (show a) ++ ":|" ++ (show as) ++ "]"
@@ -72,10 +72,10 @@ traverse_ f (NonEmpty a []) = singleton <$> f a
 traverse_ f (NonEmpty a as) = (<|) <$> (f a) <*> traverse_ f (fromArray_ as)
 
 infix 5 :|
-(:|) :: forall a. a -> [a] -> NonEmpty a
+(:|) :: forall a. a -> (A a) -> NonEmpty a
 (:|) a as = NonEmpty a as
 
-toArray :: forall a. NonEmpty a -> [a]
+toArray :: forall a. NonEmpty a -> (A a)
 toArray (NonEmpty a as) = a:as
 
 length :: forall a. NonEmpty a -> Number
@@ -84,7 +84,7 @@ length (NonEmpty _ as) = 1 + A.length as
 head :: forall a. NonEmpty a -> a
 head (NonEmpty a _) = a
 
-tail :: forall a. NonEmpty a -> [a]
+tail :: forall a. NonEmpty a -> (A a)
 tail (NonEmpty _ as) = as
 
 last :: forall a. NonEmpty a -> a
@@ -94,19 +94,19 @@ last (NonEmpty _ as) = AU.last as
 push :: forall a. a -> NonEmpty a -> NonEmpty a
 push x (NonEmpty a as) = NonEmpty x (a:as)
 
-pop :: forall a. NonEmpty a -> [a]
+pop :: forall a. NonEmpty a -> (A a)
 pop (NonEmpty a []) = []
 pop (NonEmpty a as) = a : (pop_ as)
 
 (<|) :: forall a. a -> NonEmpty a -> NonEmpty a
 (<|) a as = a :| toArray as
 
-take :: forall a. Number -> NonEmpty a -> [a]
+take :: forall a. Number -> NonEmpty a -> (A a)
 take 0 _ = []
 take 1 (NonEmpty a _) = [a]
 take n (NonEmpty a as) = a:(A.take (n - 1) as)
 
-drop :: forall a. Number -> NonEmpty a -> [a]
+drop :: forall a. Number -> NonEmpty a -> (A a)
 drop 0 nel = toArray nel
 drop 1 (NonEmpty _ as) = as
 drop n (NonEmpty _ as) = A.drop (n-1) as
@@ -114,7 +114,7 @@ drop n (NonEmpty _ as) = A.drop (n-1) as
 map :: forall a b. (a -> b) -> NonEmpty a -> NonEmpty b
 map f (NonEmpty a as) = f a :| (A.map f as)
 
-filter :: forall a. (a -> Boolean) -> NonEmpty a -> [a]
+filter :: forall a. (a -> Boolean) -> NonEmpty a -> (A a)
 filter p as = A.filter p (toArray as)
 
 singleton :: forall a. a -> NonEmpty a
@@ -126,7 +126,7 @@ nub = apply A.nub
 nubBy :: forall a. (a -> a -> Boolean) -> NonEmpty a -> NonEmpty a
 nubBy f = apply (A.nubBy f)
 
-apply :: forall a b. ([a] -> [b]) -> NonEmpty a -> NonEmpty b
+apply :: forall a b. ((A a) -> (A b)) -> NonEmpty a -> NonEmpty b
 apply f as = fromArray_ $ f (toArray as)
 
 concatMap :: forall a b. (a -> NonEmpty b) -> NonEmpty a -> NonEmpty b
@@ -153,14 +153,6 @@ reducel f (NonEmpty a as) = foldl f a as
 sconcat :: forall a. (Semigroup a) => NonEmpty a -> a
 sconcat = reducel (<>)
 
-fromArray_ (a:as) = a :| as
+fromArray_ arr = (uncons arr) >>= (\x -> x.head :| x.tail)
 
-foreign import pop_
-  """
-  function pop_(l) {
-    if(l.length == 0) return l;
-    var l1 = l.slice();
-    l1.pop(); 
-    return l1;
-  }
-  """ :: forall a. [a] -> [a]
+foreign import pop_ :: forall a. (A a) -> (A a)

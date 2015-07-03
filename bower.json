@@ -23,10 +23,10 @@
     "package.json"
   ],
   "dependencies": {
-    "purescript-arrays": "~0.3.0",
-    "purescript-foldable-traversable": "~0.3.1"
+    "purescript-arrays": "~0.4.x",
+    "purescript-foldable-traversable": "~0.4.x"
   },
   "devDependencies": {
-    "purescript-quickcheck": "~0.5.2"
+    "purescript-quickcheck": "~0.6.x"
   }
 }
